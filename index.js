@@ -20,14 +20,22 @@ class SimpleMultisig {
   // Check the contract to see if the address provided belongs to an owner.
   isOwner(addr) {
     return new Promise((resolve, reject) => {
-      const isOwnerCall = this.web3.eth.abi.encodeFunctionCall({
-        name: 'isOwner',
-        type: 'function',
-        inputs: [{ type: 'address' }],
-      }, [addr]);
-      this.web3.eth.call({ to: this.address, data: isOwnerCall })
-        .then((result) => { resolve(result); })
-        .catch((err) => { reject(err); });
+      const isOwnerCall = this.web3.eth.abi.encodeFunctionCall(
+        {
+          name: 'isOwner',
+          type: 'function',
+          inputs: [{ type: 'address' }],
+        },
+        [addr],
+      );
+      this.web3.eth
+        .call({ to: this.address, data: isOwnerCall })
+        .then(result => {
+          resolve(result);
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
   }
 
@@ -38,10 +46,15 @@ class SimpleMultisig {
         type: 'function',
         inputs: [],
       });
-      this.web3.eth.call({ to: this.address, data: nonceCall })
-        .then((nonce) => { resolve(nonce); })
-        .catch((err) => { reject(err); })
-    })
+      this.web3.eth
+        .call({ to: this.address, data: nonceCall })
+        .then(nonce => {
+          resolve(nonce);
+        })
+        .catch(err => {
+          reject(err);
+        });
+    });
   }
 
   // Given a contract and some parameters, hash the message according to
@@ -49,7 +62,9 @@ class SimpleMultisig {
   ERC191Hash(txData) {
     return new Promise((resolve, reject) => {
       if (!txData.destination || !txData.value) {
-        reject('txData must contain "destination" and "value" params ("data" optional). Please see https://github.com/ethereum/EIPs/issues/191 for more information.');
+        reject(
+          'txData must contain "destination" and "value" params ("data" optional). Please see https://github.com/ethereum/EIPs/issues/191 for more information.',
+        );
       }
       if (txData.destination.slice(2).length !== 40 || txData.destination.slice(0, 2) !== '0x') {
         reject('Invalid address provided (destination).');
@@ -59,17 +74,21 @@ class SimpleMultisig {
       }
       let preHash;
       this.getNonce()
-        .then((nonce) => {
+        .then(nonce => {
           console.log('got nonce', nonce);
           if (txData.data !== null && txData.data !== undefined && txData.data !== '0') {
-            preHash = `0x1900${this.address}${txData.destination}${txData.value}${txData.data}${nonce}`;
+            preHash = `0x1900${this.address}${txData.destination}${txData.value}${
+              txData.data
+            }${nonce}`;
           } else {
             preHash = `0x1900${this.address}${txData.destination}${txData.value}${nonce}`;
           }
           const hash = sha3(preHash);
           resolve(hash);
         })
-        .catch((err) => { reject(err); });
+        .catch(err => {
+          reject(err);
+        });
     });
   }
 
@@ -79,16 +98,25 @@ class SimpleMultisig {
     return new Promise((resolve, reject) => {
       let hash;
       this.ERC191Hash(txData)
-        .then((hash_) => {
+        .then(hash_ => {
           hash = hash_;
-          return util.ecrecover(Buffer.from(hash.slice(2), 'hex'), v, Buffer.from(r, 'hex'), Buffer.from(s, 'hex'));
+          return util.ecrecover(
+            Buffer.from(hash.slice(2), 'hex'),
+            v,
+            Buffer.from(r, 'hex'),
+            Buffer.from(s, 'hex'),
+          );
         })
-        .then((pubKey) => {
+        .then(pubKey => {
           const signer = util.publicToAddress(pubKey);
           return this.isOwner(signer.toString('hex'));
         })
-        .then((isOwner_) => { resolve(isOwner_); })
-        .catch((err) => { reject(err); });
+        .then(isOwner_ => {
+          resolve(isOwner_);
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
   }
 }

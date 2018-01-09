@@ -22,7 +22,7 @@ let threshold;
 let owners;
 let multisigAddr;
 
-contract('SimpleMultisig', (accounts) => {
+contract('SimpleMultisig', accounts => {
   assert(accounts.length > 0);
 
   function isEVMException(err) {
@@ -59,14 +59,16 @@ contract('SimpleMultisig', (accounts) => {
   function sortWallets(wallets) {
     function sortF(a, b) {
       if (a[0] === b[0]) return 0;
-      return (a[0] < b[0]) ? -1 : 1;
+      return a[0] < b[0] ? -1 : 1;
     }
     return wallets.sort(sortF);
   }
 
-  // Get signatures on a peice of data from the first n accounts
+  // Get signatures on a piece of data from the first n accounts
   function getSigs(msg, n, i, wallets, sigs) {
-    if (i === n) { return sigs; }
+    if (i === n) {
+      return sigs;
+    }
     const msgBuf = Buffer.from(msg.slice(2), 'hex');
     const pkey = Buffer.from(wallets[i][1].slice(2), 'hex');
     const sig = util.ecsign(msgBuf, pkey);
